@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>VOLTREX SecureAudit v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --surface: #0f1419;
+  --card: #141b24;
+  --border: #1e2a38;
+  --border2: #2a3a4d;
+  --accent: #00d4ff;
+  --accent2: #ff4444;
+  --accent3: #00ff88;
+  --warn: #ffaa00;
+  --purple: #a855f7;
+  --text: #e2e8f0;
+  --muted: #4a6080;
+  --muted2: #6b8aaa;
+  --radius: 4px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'Rajdhani',sans-serif; }
+
+/* ── SCREENS ── */
+.screen { position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; transition:opacity .3s, transform .3s; }
+.screen.hidden { opacity:0; pointer-events:none; transform:translateX(40px); }
+
+/* ── HEADER ── */
+.app-header {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  display:flex; align-items:center; gap:12px;
+  flex-shrink:0;
+  position:relative;
+}
+.app-header::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent3), var(--accent));
+  background-size:200%;
+  animation:shimmer 3s linear infinite;
+}
+@keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+.header-logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px; letter-spacing:3px; color:var(--accent);
+  flex:1;
+}
+.header-logo span { color:var(--text); }
+.header-step {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--muted2);
+  letter-spacing:1px;
+}
+.back-btn {
+  background:none; border:none; color:var(--muted2);
+  font-size:20px; cursor:pointer; padding:4px 8px;
+  display:none;
+}
+.back-btn.visible { display:block; }
+
+/* ── SCROLL CONTENT ── */
+.scroll-content {
+  flex:1; overflow-y:auto; padding:16px;
+  -webkit-overflow-scrolling:touch;
+}
+.scroll-content::-webkit-scrollbar { width:3px; }
+.scroll-content::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px; letter-spacing:4px;
+  color:var(--muted2); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── CARDS ── */
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px; margin-bottom:16px;
+}
+.card-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:15px; letter-spacing:3px;
+  color:var(--accent); margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom:12px; }
+.form-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--muted2);
+  letter-spacing:1.5px; text-transform:uppercase;
+  margin-bottom:5px; display:block;
+}
+.form-input, .form-select, .form-textarea {
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:var(--radius);
+  color:var(--text);
+  padding:11px 14px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:15px; font-weight:500;
+  outline:none;
+  transition:border-color .2s, box-shadow .2s;
+  -webkit-appearance:none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(0,212,255,.1);
+}
+.form-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6080' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+.form-select option { background:var(--surface); }
+.form-textarea { resize:none; min-height:70px; line-height:1.5; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* ── AUDIT TYPE CARDS ── */
+.audit-type-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; margin-bottom:12px;
+}
+.audit-type-card {
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:var(--radius);
+  padding:14px 12px;
+  cursor:pointer;
+  transition:all .2s;
+  text-align:center;
+  position:relative; overflow:hidden;
+}
+.audit-type-card.selected {
+  border-color:var(--accent);
+  background:rgba(0,212,255,.06);
+}
+.audit-type-card.selected::before {
+  content:'✓';
+  position:absolute; top:6px; right:8px;
+  font-size:11px; color:var(--accent);
+  font-family:'JetBrains Mono',monospace;
+}
+.audit-type-icon { font-size:24px; margin-bottom:6px; }
+.audit-type-name {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:14px; letter-spacing:2px; color:var(--text);
+}
+.audit-type-desc {
+  font-size:10px; color:var(--muted2);
+  margin-top:3px; line-height:1.3;
+}
+
+/* ── FACILITY TYPE ── */
+.facility-scroll {
+  display:flex; gap:8px;
+  overflow-x:auto; padding-bottom:8px; margin-bottom:4px;
+  -webkit-overflow-scrolling:touch;
+}
+.facility-scroll::-webkit-scrollbar { display:none; }
+.facility-chip {
+  flex-shrink:0;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:8px 14px;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  font-size:13px; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+.facility-chip.selected {
+  border-color:var(--accent3);
+  background:rgba(0,255,136,.07);
+  color:var(--accent3);
+}
+
+/* ── PRIMARY BUTTON ── */
+.btn-primary {
+  width:100%;
+  background:linear-gradient(135deg, #007aaa, var(--accent));
+  color:#000;
+  border:none; border-radius:var(--radius);
+  padding:15px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px; letter-spacing:4px;
+  cursor:pointer;
+  transition:all .2s;
+  margin-top:8px;
+  position:relative; overflow:hidden;
+}
+.btn-primary:active { transform:scale(.98); }
+.btn-primary:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; }
+
+.btn-secondary {
+  width:100%;
+  background:transparent;
+  color:var(--accent);
+  border:1px solid var(--accent);
+  border-radius:var(--radius);
+  padding:13px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px; letter-spacing:3px;
+  cursor:pointer; margin-top:8px;
+  transition:all .2s;
+}
+.btn-secondary:active { background:rgba(0,212,255,.08); }
+
+.btn-danger {
+  background:transparent; color:var(--accent2);
+  border:1px solid var(--accent2);
+  border-radius:var(--radius);
+  padding:10px 16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px; letter-spacing:1px;
+  cursor:pointer; transition:all .2s;
+}
+
+/* ── FAB ── */
+.fab {
+  position:fixed; bottom:24px; right:20px;
+  width:58px; height:58px;
+  background:linear-gradient(135deg, #007aaa, var(--accent));
+  border:none; border-radius:50%;
+  color:#000; font-size:26px;
+  cursor:pointer; z-index:100;
+  box-shadow:0 4px 20px rgba(0,212,255,.4);
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.fab:active { transform:scale(.92); }
+
+/* ── AUDIT SUMMARY BAR ── */
+.audit-bar {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+  display:flex; align-items:center; gap:12px;
+  flex-shrink:0;
+}
+.audit-bar-info { flex:1; }
+.audit-bar-client {
+  font-size:14px; font-weight:700; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:200px;
+}
+.audit-bar-meta {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:var(--muted2);
+  letter-spacing:1px; margin-top:2px;
+}
+.audit-bar-count {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px; color:var(--warn); line-height:1;
+}
+.audit-bar-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:var(--muted2);
+  text-align:center; letter-spacing:1px;
+}
+
+/* ── FINDING CARDS ── */
+.finding-list { padding-bottom:100px; }
+.finding-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:12px;
+  overflow:hidden;
+  animation:slideIn .25s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.finding-card-header {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.finding-num {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px; color:var(--muted2);
+  min-width:32px;
+}
+.finding-header-info { flex:1; min-width:0; }
+.finding-title-text {
+  font-size:14px; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.finding-meta {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:var(--muted2);
+  margin-top:2px; letter-spacing:1px;
+}
+.sev-pill {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; font-weight:600;
+  padding:3px 8px; border-radius:20px;
+  letter-spacing:1px; white-space:nowrap;
+  flex-shrink:0;
+}
+.sev-critical { background:rgba(255,68,68,.15); color:#ff6b6b; }
+.sev-high { background:rgba(255,170,0,.15); color:var(--warn); }
+.sev-medium { background:rgba(0,212,255,.12); color:var(--accent); }
+.sev-low { background:rgba(0,255,136,.12); color:var(--accent3); }
+
+.finding-card-body { padding:14px; display:none; }
+.finding-card-body.open { display:block; }
+.finding-body-field { margin-bottom:10px; }
+.finding-field-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:var(--muted2);
+  letter-spacing:1.5px; margin-bottom:4px;
+}
+.finding-field-value { font-size:13px; color:var(--text); line-height:1.5; }
+.finding-photo { width:100%; border-radius:var(--radius); margin-top:6px; border:1px solid var(--border2); }
+.std-ref-box {
+  background:var(--surface);
+  border-left:2px solid var(--accent);
+  padding:8px 12px; margin-top:8px;
+  font-size:12px; color:var(--muted2); line-height:1.5;
+}
+.std-ref-box strong { color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:10px; }
+
+/* ── NEW FINDING FORM ── */
+.sev-select-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.sev-btn {
+  flex:1; min-width:70px;
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--radius); padding:10px 8px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  letter-spacing:1px; cursor:pointer; transition:all .2s;
+  color:var(--muted2); text-align:center;
+}
+.sev-btn.active-critical { border-color:#ff4444; background:rgba(255,68,68,.12); color:#ff6b6b; }
+.sev-btn.active-high { border-color:var(--warn); background:rgba(255,170,0,.12); color:var(--warn); }
+.sev-btn.active-medium { border-color:var(--accent); background:rgba(0,212,255,.1); color:var(--accent); }
+.sev-btn.active-low { border-color:var(--accent3); background:rgba(0,255,136,.1); color:var(--accent3); }
+
+.std-check-grid { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+.std-toggle {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:3px; padding:6px 10px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  letter-spacing:1px; cursor:pointer; transition:all .2s;
+  color:var(--muted2);
+}
+.std-toggle.on { border-color:var(--accent); color:var(--accent); background:rgba(0,212,255,.08); }
+
+/* ── PHOTO AREA ── */
+.photo-capture-area {
+  border:2px dashed var(--border2);
+  border-radius:var(--radius);
+  padding:20px; text-align:center;
+  cursor:pointer; margin-bottom:12px;
+  transition:all .2s; position:relative;
+}
+.photo-capture-area:hover { border-color:var(--accent); background:rgba(0,212,255,.03); }
+.photo-capture-area input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.photo-icon { font-size:32px; margin-bottom:6px; }
+.photo-text { font-size:12px; color:var(--muted2); font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+#newFindingPhotoPreview { width:100%; border-radius:var(--radius); margin-bottom:12px; display:none; border:1px solid var(--border2); }
+
+/* ── AI ANALYZING ── */
+.ai-analyzing {
+  display:none; background:var(--surface);
+  border:1px solid var(--accent); border-radius:var(--radius);
+  padding:14px; margin-bottom:12px; text-align:center;
+}
+.ai-analyzing.visible { display:block; }
+.ai-spinner {
+  width:32px; height:32px; border:2px solid var(--border2);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin .8s linear infinite; margin:0 auto 8px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.ai-status {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--accent); letter-spacing:1.5px;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:48px 20px;
+  display:flex; flex-direction:column; align-items:center;
+}
+.empty-icon { font-size:48px; margin-bottom:16px; opacity:.4; }
+.empty-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; color:var(--muted2); margin-bottom:8px; }
+.empty-desc { font-size:13px; color:var(--muted); line-height:1.5; }
+
+/* ── PROGRESS DOTS ── */
+.progress-dots {
+  display:flex; justify-content:center; gap:8px;
+  padding:12px; flex-shrink:0;
+}
+.dot { width:6px; height:6px; border-radius:50%; background:var(--border2); transition:all .3s; }
+.dot.active { background:var(--accent); width:20px; border-radius:3px; }
+.dot.done { background:var(--accent3); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--card); border:1px solid var(--accent3);
+  color:var(--accent3); padding:10px 20px;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  letter-spacing:1px; border-radius:var(--radius);
+  opacity:0; transition:all .3s; z-index:200; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── AUDIT TYPE BADGE ── */
+.type-badges { display:flex; flex-wrap:wrap; gap:4px; }
+.type-badge {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; letter-spacing:1px;
+  padding:3px 8px; border-radius:2px; border:1px solid;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  z-index:150; display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal-sheet {
+  background:var(--surface); width:100%;
+  border-top:2px solid var(--accent);
+  border-radius:16px 16px 0 0;
+  padding:24px 16px 40px;
+  transform:translateY(100%); transition:transform .3s;
+  max-height:85vh; overflow-y:auto;
+}
+.modal-overlay.open .modal-sheet { transform:translateY(0); }
+.modal-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px; letter-spacing:3px; color:var(--accent);
+  margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;
+}
+.modal-close { font-size:20px; cursor:pointer; color:var(--muted2); background:none; border:none; }
+
+/* ── OFFLINE BANNER ── */
+.offline-banner{background:rgba(255,170,0,.1);border-bottom:1px solid rgba(255,170,0,.25);padding:5px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.offline-banner.online{background:rgba(0,255,136,.07);border-bottom-color:rgba(0,255,136,.2);}
+.offline-dot{width:7px;height:7px;border-radius:50%;background:var(--warn);flex-shrink:0;animation:offlinePulse 1.2s ease infinite;}
+.offline-banner.online .offline-dot{background:var(--accent3);animation:blink 2s infinite;}
+@keyframes offlinePulse{0%,100%{box-shadow:0 0 0 0 rgba(255,170,0,.5)}50%{box-shadow:0 0 0 4px rgba(255,170,0,0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.offline-text{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--warn);letter-spacing:.5px;flex:1;}
+.offline-banner.online .offline-text{color:var(--accent3);}
+.sync-btn{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--accent);background:none;border:1px solid var(--accent);padding:3px 8px;cursor:pointer;border-radius:2px;display:flex;align-items:center;gap:5px;}
+.pending-badge{background:var(--warn);color:#000;border-radius:10px;padding:1px 5px;font-size:8px;font-weight:700;display:none;}
+.pending-badge.show{display:inline-block;}
+/* ── MIC BUTTON ── */
+.mic-btn{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);color:var(--muted2);cursor:pointer;padding:3px 9px;transition:all .2s;line-height:1;display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.5px;}
+.mic-btn:active{transform:scale(.95);}
+.mic-btn.recording{border-color:var(--accent2);color:var(--accent2);background:rgba(255,68,68,.08);animation:micPulse .6s ease infinite;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,68,.4)}50%{box-shadow:0 0 0 6px rgba(255,68,68,0)}}
+/* ── FIELD ACTIVE DICTATION STATE ── */
+.form-group.dictating .form-input,
+.form-group.dictating .form-textarea{border-color:var(--accent2)!important;background:rgba(255,68,68,.04)!important;box-shadow:0 0 0 2px rgba(255,68,68,.15);}
+.form-group.dictating .form-label{color:var(--accent2);}
+/* ── LIVE TRANSCRIPT BUBBLE ── */
+.live-transcript{display:none;background:rgba(255,68,68,.06);border:1px solid rgba(255,68,68,.25);border-radius:var(--radius);padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,180,180,.9);line-height:1.5;margin-top:5px;min-height:28px;letter-spacing:.3px;}
+.live-transcript.active{display:block;}
+/* ── VOICE FULL ── */
+.btn-voice{width:100%;background:rgba(168,85,247,.08);border:1px solid var(--purple);color:var(--purple);border-radius:var(--radius);padding:13px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn-voice:active{transform:scale(.98);}
+.btn-voice.recording{border-color:var(--accent2);color:var(--accent2);background:rgba(255,68,68,.1);animation:micPulse .6s ease infinite;}
+.voice-wave{display:none;align-items:center;justify-content:center;gap:3px;height:26px;margin:5px 0;}
+.voice-wave.active{display:flex;}
+.wave-bar{width:3px;background:var(--accent2);border-radius:2px;animation:wb .6s ease infinite;}
+.wave-bar:nth-child(1){height:8px;animation-delay:0s}.wave-bar:nth-child(2){height:18px;animation-delay:.1s}.wave-bar:nth-child(3){height:24px;animation-delay:.2s}.wave-bar:nth-child(4){height:18px;animation-delay:.3s}.wave-bar:nth-child(5){height:10px;animation-delay:.4s}.wave-bar:nth-child(6){height:20px;animation-delay:.15s}
+@keyframes wb{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.7)}}
+/* ── VOICE STATUS ── */
+.voice-status{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:.5px;margin-bottom:10px;min-height:34px;line-height:1.5;transition:all .2s;}
+.voice-status.active{border-color:var(--purple);color:var(--text);background:rgba(168,85,247,.05);}
+.voice-status.success{border-color:var(--accent3);color:var(--accent3);background:rgba(0,255,136,.05);}
+.voice-status.error{border-color:var(--accent2);color:var(--accent2);}
+/* ── VOICE TIMER ── */
+.voice-timer{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent2);letter-spacing:2px;text-align:center;display:none;margin:4px 0 8px;}
+.voice-timer.active{display:block;}
+/* ── iOS SPEECH NOTE ── */
+.ios-note{display:none;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--warn);padding:5px 10px;background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.2);border-radius:var(--radius);margin-bottom:8px;line-height:1.5;}
+.ios-note.show{display:block;}
+/* ── BIRDSEYE ── */
+.birdseye-drop{border:2px dashed var(--border2);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;overflow:hidden;transition:all .2s;margin-bottom:4px;}
+.birdseye-drop:hover{border-color:var(--accent3);}
+.birdseye-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+/* ── PHOTO META ── */
+.photo-meta-info{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2);margin-bottom:10px;display:none;line-height:1.6;}
+/* ── PENDING BADGE ── */
+.pending-tag{font-family:'JetBrains Mono',monospace;font-size:8px;background:rgba(255,170,0,.12);color:var(--warn);border:1px solid rgba(255,170,0,.3);padding:2px 5px;border-radius:2px;margin-left:4px;}
+/* ── SYNC ITEM ── */
+.sync-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN 1: SPLASH / WELCOME               -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen" id="screenSplash">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:radial-gradient(ellipse at 50% 30%, rgba(0,212,255,.06) 0%, transparent 70%)">
+    <div style="font-size:64px;margin-bottom:16px">🛡️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:6px;color:var(--accent);line-height:1">VOLTREX</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:8px;color:var(--text);margin-bottom:8px">SECURE AUDIT</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:2px;margin-bottom:48px">RISK ASSESSMENT PLATFORM v3.0</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:48px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--accent);color:var(--accent);letter-spacing:1px">ASIS CPP/APP</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--accent3);color:var(--accent3);letter-spacing:1px">C-TPAT</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--warn);color:var(--warn);letter-spacing:1px">EHS/OSHA</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid #a855f7;color:#a855f7;letter-spacing:1px">PROTECCIÓN CIVIL</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid #f87171;color:#f87171;letter-spacing:1px">NFPA</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid #34d399;color:#34d399;letter-spacing:1px">ISO 45001</span>
+    </div>
+    <button class="btn-primary" style="max-width:280px" onclick="goTo('screenSetup')">⬡ NUEVA AUDITORÍA</button>
+    <button class="btn-secondary" style="max-width:280px" onclick="loadExisting()">CONTINUAR AUDITORÍA</button>
+  </div>
+  <div style="padding:16px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px">
+    © 2025 VOLTREX CONSULTING · ANTONIO RODRÍGUEZ
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN 2: CLIENT SETUP                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen hidden" id="screenSetup">
+  <div class="app-header">
+    <button class="back-btn visible" onclick="goTo('screenSplash')">‹</button>
+    <div class="header-logo">VOLTREX <span>AUDIT</span></div>
+    <div class="header-step">PASO 1/3</div>
+  </div>
+  <div class="progress-dots">
+    <div class="dot active" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+  </div>
+  <div class="scroll-content">
+
+    <div class="card">
+      <div class="card-title">📋 DATOS DEL CLIENTE</div>
+      <div class="form-group">
+        <label class="form-label">Nombre del cliente / empresa</label>
+        <input class="form-input" id="clientName" type="text" placeholder="Ej: Grupo Industrial del Norte">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre de la instalación</label>
+        <input class="form-input" id="siteName" type="text" placeholder="Ej: Planta Monterrey Norte">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ciudad</label>
+          <input class="form-input" id="city" type="text" placeholder="Ciudad">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <input class="form-input" id="state" type="text" placeholder="Estado">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dirección completa</label>
+        <input class="form-input" id="address" type="text" placeholder="Calle, número, colonia...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contacto en sitio</label>
+          <input class="form-input" id="contactName" type="text" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input class="form-input" id="contactPhone" type="tel" placeholder="+52...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Auditor responsable</label>
+        <input class="form-input" id="auditorName" type="text" placeholder="Antonio Rodríguez" value="Antonio Rodríguez">
+      </div>
+    </div>
+
+    
+    <div class="card">
+      <div class="card-title">🗺️ PLANO BIRDSEYE</div>
+      <p style="font-size:12px;color:var(--muted2);margin-bottom:10px;line-height:1.5">Sube plano, foto aérea o mapa del sitio para referenciar hallazgos.</p>
+      <div class="birdseye-drop" id="birdseyeDrop">
+        <input type="file" accept="image/*" id="birdseyeFile" onchange="loadBirdseye(this)">
+        <span style="font-size:22px">🗺️</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2)">SUBIR PLANO / FOTO AÉREA</span>
+      </div>
+      <img id="birdseyePreview" src="" alt="Plano" style="width:100%;border-radius:var(--radius);margin-top:8px;border:1px solid var(--border2);display:none">
+      <div id="birdseyeMeta" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2);margin-top:5px;display:none"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏢 TIPO DE INSTALACIÓN</div>
+      <div class="facility-scroll" id="facilityScroll">
+        <div class="facility-chip" data-val="Manufactura" onclick="selectFacility(this)">🏭 Manufactura</div>
+        <div class="facility-chip" data-val="Logística / Patio de Carga" onclick="selectFacility(this)">🚛 Logística</div>
+        <div class="facility-chip" data-val="Hotel" onclick="selectFacility(this)">🏨 Hotel</div>
+        <div class="facility-chip" data-val="Hospital / Clínica" onclick="selectFacility(this)">🏥 Hospital</div>
+        <div class="facility-chip" data-val="Escuela / Universidad" onclick="selectFacility(this)">🎓 Escuela</div>
+        <div class="facility-chip" data-val="Plaza Comercial / Retail" onclick="selectFacility(this)">🛍 Plaza Comercial</div>
+        <div class="facility-chip" data-val="Oficinas Corporativas" onclick="selectFacility(this)">🏢 Oficinas</div>
+        <div class="facility-chip" data-val="Almacén / Bodega" onclick="selectFacility(this)">📦 Almacén</div>
+        <div class="facility-chip" data-val="Petroquímica / Energía" onclick="selectFacility(this)">⚡ Petroquímica</div>
+        <div class="facility-chip" data-val="Farmacéutica" onclick="selectFacility(this)">💊 Farmacéutica</div>
+        <div class="facility-chip" data-val="Gobierno / Infraestructura" onclick="selectFacility(this)">🏛 Gobierno</div>
+        <div class="facility-chip" data-val="Centro de Datos" onclick="selectFacility(this)">💻 Data Center</div>
+      </div>
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label">Notas del sitio (opcional)</label>
+        <textarea class="form-textarea" id="siteNotes" placeholder="Describe características especiales del lugar..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goToAuditType()">SIGUIENTE → TIPO DE AUDITORÍA</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN 3: AUDIT TYPE SELECTION           -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen hidden" id="screenAuditType">
+  <div class="app-header">
+    <button class="back-btn visible" onclick="goTo('screenSetup')">‹</button>
+    <div class="header-logo">VOLTREX <span>AUDIT</span></div>
+    <div class="header-step">PASO 2/3</div>
+  </div>
+  <div class="progress-dots">
+    <div class="dot done"></div>
+    <div class="dot active"></div>
+    <div class="dot"></div>
+  </div>
+  <div class="scroll-content">
+    <div class="card">
+      <div class="card-title">⚡ TIPO DE AUDITORÍA</div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:14px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px">Selecciona uno o más estándares aplicables</div>
+      <div class="audit-type-grid" id="auditTypeGrid">
+        <div class="audit-type-card" data-type="ASIS-CPP" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🔐</div>
+          <div class="audit-type-name">ASIS CPP</div>
+          <div class="audit-type-desc">Certified Protection Professional</div>
+        </div>
+        <div class="audit-type-card" data-type="ASIS-APP" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🏗</div>
+          <div class="audit-type-name">ASIS APP</div>
+          <div class="audit-type-desc">Associate Protection Professional</div>
+        </div>
+        <div class="audit-type-card" data-type="CTPAT" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🚢</div>
+          <div class="audit-type-name">C-TPAT</div>
+          <div class="audit-type-desc">Supply Chain Security</div>
+        </div>
+        <div class="audit-type-card" data-type="EHS" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">⛑</div>
+          <div class="audit-type-name">EHS</div>
+          <div class="audit-type-desc">Environment, Health & Safety</div>
+        </div>
+        <div class="audit-type-card" data-type="OSHA" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🦺</div>
+          <div class="audit-type-name">OSHA</div>
+          <div class="audit-type-desc">29 CFR 1910 / 1926</div>
+        </div>
+        <div class="audit-type-card" data-type="PROTECCION-CIVIL" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🚒</div>
+          <div class="audit-type-name">PROT. CIVIL</div>
+          <div class="audit-type-desc">LGPC / NOM-002-STPS</div>
+        </div>
+        <div class="audit-type-card" data-type="NFPA" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🔥</div>
+          <div class="audit-type-name">NFPA</div>
+          <div class="audit-type-desc">Fire Protection Standards</div>
+        </div>
+        <div class="audit-type-card" data-type="ISO45001" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">📋</div>
+          <div class="audit-type-name">ISO 45001</div>
+          <div class="audit-type-desc">OH&S Management</div>
+        </div>
+        <div class="audit-type-card" data-type="ISO27001" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">💻</div>
+          <div class="audit-type-name">ISO 27001</div>
+          <div class="audit-type-desc">Information Security</div>
+        </div>
+        <div class="audit-type-card" data-type="STPS" onclick="toggleAuditType(this)">
+          <div class="audit-type-icon">🏛</div>
+          <div class="audit-type-name">STPS</div>
+          <div class="audit-type-desc">Normatividad Mexicana</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 ÁREAS A INSPECCIONAR</div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:12px;font-family:'JetBrains Mono',monospace">Selecciona las áreas de esta auditoría</div>
+      <div class="std-check-grid" id="areasGrid">
+        <div class="std-toggle" onclick="toggleArea(this)">Acceso principal</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Perímetro</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Almacén</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Carga/Descarga</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Estacionamiento</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Producción</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Oficinas</div>
+        <div class="std-toggle" onclick="toggleArea(this)">CCTV / Control</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Quím. Peligrosos</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Cuarto de TI</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Área exterior</div>
+        <div class="std-toggle" onclick="toggleArea(this)">Rutas evacuación</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 OBJETIVO DE LA AUDITORÍA</div>
+      <div class="form-group">
+        <label class="form-label">Alcance / Objetivo</label>
+        <textarea class="form-textarea" id="auditScope" placeholder="Describe el objetivo de esta auditoría, qué se espera evaluar..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startAudit()">INICIAR AUDITORÍA ▶</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCREEN 4: MAIN AUDIT SCREEN              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="screen hidden" id="screenAudit">
+  <div class="app-header">
+    <button class="back-btn visible" onclick="confirmExit()">‹</button>
+    <div class="header-logo">VOLTREX <span>AUDIT</span></div>
+    <button style="background:none;border:1px solid var(--border2);color:var(--muted2);padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;border-radius:var(--radius)" onclick="openModal('modalSync')">📴 SYNC</button> <button style="background:none;border:1px solid var(--border2);color:var(--muted2);padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;border-radius:var(--radius)" onclick="showSummary()">RESUMEN</button>
+  </div>
+  
+  <!-- OFFLINE BANNER v3 -->
+  <div class="offline-banner" id="offlineBanner">
+    <div class="offline-dot"></div>
+    <div class="offline-text" id="offlineText">SIN CONEXIÓN — MODO OFFLINE</div>
+    <button class="sync-btn" onclick="syncPending()">SYNC <span class="pending-badge" id="pendingBadge">0</span></button>
+  </div>
+  <div class="audit-bar" id="auditBar">
+    <div class="audit-bar-info">
+      <div class="audit-bar-client" id="barClient">—</div>
+      <div class="audit-bar-meta" id="barMeta">—</div>
+      <div class="type-badges" id="barBadges" style="margin-top:4px"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="audit-bar-count" id="barCount">0</div>
+      <div class="audit-bar-label">HALLAZGOS</div>
+    </div>
+  </div>
+  <div class="scroll-content" style="padding-bottom:90px">
+    <div id="findingsList" class="finding-list">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📷</div>
+        <div class="empty-title">SIN HALLAZGOS AÚN</div>
+        <div class="empty-desc">Toca el botón + para agregar<br>el primer hallazgo con foto</div>
+      </div>
+    </div>
+  </div>
+  <button class="fab" onclick="openNewFinding()">+</button>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: NEW FINDING                       -->
+<!-- ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalNewFinding">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span id="findingModalTitle">NUEVO HALLAZGO #1</span>
+      <button class="modal-close" onclick="closeModal('modalNewFinding')">✕</button>
+    </div>
+
+    <!-- VOICE DICTATION v4 -->
+    <div class="ios-note" id="iosNote">⚠ Safari iOS: el dictado continuo puede requerir permisos. Si no funciona, usa el 🎙 en cada campo individualmente.</div>
+    <button class="btn-voice" id="btnVoiceFull" onclick="toggleFullVoice()">🎙️ DICTAR HALLAZGO COMPLETO CON IA</button>
+    <div class="voice-timer" id="voiceTimer">⏱ 0:00 — GRABANDO</div>
+    <div class="voice-wave" id="voiceWave"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
+    <div class="voice-status" id="voiceStatus">Presiona para dictar libremente — la IA llenará todos los campos.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2)">O LLENA CAMPO POR CAMPO</span><div style="flex:1;height:1px;background:var(--border)"></div></div>
+    <div class="form-group" id="fgTitle">
+      <label class="form-label">TÍTULO DEL HALLAZGO <button class="mic-btn" id="micTitle" onclick="qDictate('nfTitle','fgTitle','micTitle')">🎙 DICTAR</button></label>
+      <input class="form-input" id="nfTitle" type="text" placeholder="Describe brevemente el problema...">
+      <div class="live-transcript" id="ltTitle"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ÁREA DONDE SE DETECTÓ</label>
+      <select class="form-select" id="nfArea">
+        <option value="">Seleccionar área...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">SEVERIDAD</label>
+      <div class="sev-select-row">
+        <button class="sev-btn" data-sev="critical" onclick="selectSeverity(this)">🔴 CRÍTICO</button>
+        <button class="sev-btn" data-sev="high" onclick="selectSeverity(this)">🟠 ALTO</button>
+        <button class="sev-btn" data-sev="medium" onclick="selectSeverity(this)">🟡 MEDIO</button>
+        <button class="sev-btn" data-sev="low" onclick="selectSeverity(this)">🟢 BAJO</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">FOTOGRAFÍA</label>
+      <div class="photo-capture-area" id="photoCaptureArea">
+        <input type="file" accept="image/*" capture="environment" id="nfPhotoInput" onchange="handlePhotoCapture(this)">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">TOMAR FOTO / SUBIR IMAGEN</div>
+      </div>
+      <img id="newFindingPhotoPreview" src="" alt="">
+    </div>
+
+    <div class="ai-analyzing" id="aiAnalyzing">
+      <div class="ai-spinner"></div>
+      <div class="ai-status" id="aiStatusText">ANALIZANDO CON IA...</div>
+    </div>
+
+    <div class="form-group" id="fgDescription">
+      <label class="form-label">OBSERVACIÓN <button class="mic-btn" id="micDescription" onclick="qDictate('nfDescription','fgDescription','micDescription')">🎙 DICTAR</button></label>
+      <textarea class="form-textarea" id="nfDescription" rows="3" placeholder="Describe lo que observas... (la IA pre-llenará esto)"></textarea>
+      <div class="live-transcript" id="ltDescription"></div>
+    </div>
+
+    <div class="form-group" id="fgAction">
+      <label class="form-label">ACCIÓN CORRECTIVA <button class="mic-btn" id="micAction" onclick="qDictate('nfAction','fgAction','micAction')">🎙 DICTAR</button></label>
+      <textarea class="form-textarea" id="nfAction" rows="2" placeholder="Acción correctiva recomendada..."></textarea>
+      <div class="live-transcript" id="ltAction"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ESTÁNDARES APLICABLES</label>
+      <div class="std-check-grid" id="nfStdGrid"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">REFERENCIA NORMATIVA</label>
+      <input class="form-input" id="nfStdRef" type="text" placeholder="Ej: C-TPAT Pillar 4.1, OSHA 29 CFR 1910.37...">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">PLAZO</label>
+        <select class="form-select" id="nfDeadline">
+          <option value="Inmediato">Inmediato</option>
+          <option value="7 días">7 días</option>
+          <option value="30 días">30 días</option>
+          <option value="90 días">90 días</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">RESPONSABLE</label>
+        <input class="form-input" id="nfResponsible" type="text" placeholder="Área o persona">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveFinding()">💾 GUARDAR HALLAZGO</button>
+    <button class="btn-secondary" onclick="closeModal('modalNewFinding')">CANCELAR</button>
+  </div>
+</div>
+
+
+<!-- MODAL: SYNC v3 -->
+<div class="modal-overlay" id="modalSync">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span>📴 OFFLINE / SINCRONIZACIÓN</span>
+      <button class="modal-close" onclick="closeModal('modalSync')">✕</button>
+    </div>
+    <div id="syncStatusDisplay" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);line-height:1.8"></div>
+    <div id="syncItemsList"></div>
+    <button class="btn-primary" id="syncModalBtn" onclick="syncPending()">⟳ SINCRONIZAR CON IA</button>
+    <button class="btn-secondary" onclick="closeModal('modalSync')">CERRAR</button>
+  </div>
+</div>
+
+<!-- MODAL: SUMMARY -->
+<div class="modal-overlay" id="modalSummary">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span>RESUMEN DE AUDITORÍA</span>
+      <button class="modal-close" onclick="closeModal('modalSummary')">✕</button>
+    </div>
+    <div id="summaryContent"></div>
+    <button class="btn-primary" style="margin-top:16px" onclick="closeModal('modalSummary')">CERRAR</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let auditData = {
+  id: Date.now(),
+  client: {}, site: {}, auditor: '',
+  facilityType: '', auditTypes: [], areas: [], scope: '',
+  findings: [], startTime: new Date().toISOString()
+};
+
+let selectedSeverity = '';
+let currentPhotoBase64 = null;
+let currentPhotoType = null;
+
+// ── NAVIGATION ──
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function selectFacility(el) {
+  document.querySelectorAll('.facility-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  auditData.facilityType = el.dataset.val;
+}
+
+function toggleAuditType(el) {
+  el.classList.toggle('selected');
+}
+
+function toggleArea(el) {
+  el.classList.toggle('on');
+}
+
+function goToAuditType() {
+  const client = document.getElementById('clientName').value.trim();
+  const site = document.getElementById('siteName').value.trim();
+  if (!client || !site) { showToast('⚠ Ingresa cliente e instalación'); return; }
+  auditData.client = {
+    name: client, site,
+    city: document.getElementById('city').value,
+    state: document.getElementById('state').value,
+    address: document.getElementById('address').value,
+    contact: document.getElementById('contactName').value,
+    phone: document.getElementById('contactPhone').value
+  };
+  auditData.auditor = document.getElementById('auditorName').value || 'Antonio Rodríguez';
+  auditData.siteNotes = document.getElementById('siteNotes').value;
+
+  document.getElementById('dot1').classList.remove('active');
+  document.getElementById('dot1').classList.add('done');
+  document.getElementById('dot2').classList.add('active');
+  goTo('screenAuditType');
+}
+
+function startAudit() {
+  const selected = [...document.querySelectorAll('.audit-type-card.selected')].map(el => el.dataset.type);
+  if (!selected.length) { showToast('⚠ Selecciona al menos un estándar'); return; }
+  auditData.auditTypes = selected;
+  auditData.areas = [...document.querySelectorAll('#areasGrid .std-toggle.on')].map(el => el.textContent);
+  auditData.scope = document.getElementById('auditScope').value;
+
+  // Update audit bar
+  document.getElementById('barClient').textContent = `${auditData.client.name} — ${auditData.client.site}`;
+  document.getElementById('barMeta').textContent = `${auditData.facilityType || 'Instalación'} · ${auditData.client.city || ''}`;
+
+  const badgesEl = document.getElementById('barBadges');
+  const colors = {'ASIS-CPP':'#00d4ff','ASIS-APP':'#00d4ff','CTPAT':'#00ff88','EHS':'#ffaa00','OSHA':'#ffaa00','PROTECCION-CIVIL':'#a855f7','NFPA':'#f87171','ISO45001':'#34d399','ISO27001':'#a78bfa','STPS':'#fbbf24'};
+  badgesEl.innerHTML = selected.map(t => `<span class="type-badge" style="border-color:${colors[t]||'#fff'};color:${colors[t]||'#fff'}">${t}</span>`).join('');
+
+  // Populate nfArea select
+  const areaSelect = document.getElementById('nfArea');
+  areaSelect.innerHTML = '<option value="">Seleccionar área...</option>';
+  const allAreas = ['Acceso principal','Perímetro','Almacén','Carga/Descarga','Estacionamiento','Producción','Oficinas','CCTV / Control','Quím. Peligrosos','Cuarto de TI','Área exterior','Rutas evacuación'];
+  allAreas.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; areaSelect.appendChild(o); });
+
+  // Populate std grid in modal
+  const stdGrid = document.getElementById('nfStdGrid');
+  stdGrid.innerHTML = '';
+  selected.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'std-toggle on';
+    el.textContent = t;
+    el.onclick = () => el.classList.toggle('on');
+    stdGrid.appendChild(el);
+  });
+
+  document.getElementById('dot2').classList.remove('active');
+  document.getElementById('dot2').classList.add('done');
+  document.getElementById('dot3').classList.add('active');
+  goTo('screenAudit');
+  updateBarCount();
+}
+
+// ── FINDINGS ──
+function openNewFinding() {
+  const num = auditData.findings.length + 1;
+  document.getElementById('findingModalTitle').textContent = `NUEVO HALLAZGO #${num}`;
+  document.getElementById('nfTitle').value = '';
+  document.getElementById('nfDescription').value = '';
+  document.getElementById('nfAction').value = '';
+  document.getElementById('nfStdRef').value = '';
+  document.getElementById('nfResponsible').value = '';
+  document.getElementById('nfDeadline').value = 'Inmediato';
+  document.getElementById('newFindingPhotoPreview').style.display = 'none';
+  document.getElementById('photoCaptureArea').style.display = 'block';
+  document.getElementById('aiAnalyzing').classList.remove('visible');
+  selectedSeverity = '';
+  currentPhotoBase64 = null; currentPhotoType = null;
+  document.querySelectorAll('.sev-btn').forEach(b => b.className = 'sev-btn');
+  // re-enable std toggles for selected standards
+  document.querySelectorAll('#nfStdGrid .std-toggle').forEach(el => el.classList.add('on'));
+  openModal('modalNewFinding');
+}
+
+function selectSeverity(el) {
+  document.querySelectorAll('.sev-btn').forEach(b => b.className = 'sev-btn');
+  selectedSeverity = el.dataset.sev;
+  el.classList.add(`active-${selectedSeverity}`);
+}
+
+async function handlePhotoCapture(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const result = e.target.result;
+    currentPhotoBase64 = result.split(',')[1];
+    currentPhotoType = file.type;
+    const preview = document.getElementById('newFindingPhotoPreview');
+    preview.src = result; preview.style.display = 'block';
+    document.getElementById('photoCaptureArea').style.display = 'none';
+    await analyzePhoto();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzePhoto() {
+  if (!currentPhotoBase64) return;
+  const aiBox = document.getElementById('aiAnalyzing');
+  const aiStatus = document.getElementById('aiStatusText');
+  aiBox.classList.add('visible');
+  aiStatus.textContent = 'ANALIZANDO CON IA...';
+
+  const standards = [...document.querySelectorAll('#nfStdGrid .std-toggle.on')].map(el => el.textContent).join(', ');
+  const facility = auditData.facilityType || 'instalación industrial';
+  const area = document.getElementById('nfArea').value || 'área de la instalación';
+
+  try {
+    aiStatus.textContent = 'CONSULTANDO BASE NORMATIVA...';
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `Eres un experto auditor de seguridad certificado en ${standards}. Analiza fotografías de instalaciones tipo "${facility}" para identificar no conformidades. Responde SOLO en JSON válido sin backticks ni texto adicional.`,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: currentPhotoType, data: currentPhotoBase64 } },
+            { type: "text", text: `Analiza esta foto del área "${area}" de una instalación tipo "${facility}". Estándares: ${standards}.
+Responde con este JSON exacto:
+{
+  "title": "<título corto del hallazgo principal>",
+  "severity": "<critical|high|medium|low>",
+  "description": "<descripción del problema en 2-3 oraciones>",
+  "action": "<acción correctiva inmediata>",
+  "stdRef": "<referencia normativa específica más relevante>",
+  "deadline": "<Inmediato|7 días|30 días|90 días>"
+}` }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.map(b => b.text||'').join('') || '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    if (parsed.title && !document.getElementById('nfTitle').value) document.getElementById('nfTitle').value = parsed.title;
+    if (parsed.description) document.getElementById('nfDescription').value = parsed.description;
+    if (parsed.action) document.getElementById('nfAction').value = parsed.action;
+    if (parsed.stdRef) document.getElementById('nfStdRef').value = parsed.stdRef;
+    if (parsed.deadline) document.getElementById('nfDeadline').value = parsed.deadline;
+    if (parsed.severity && !selectedSeverity) {
+      const btn = document.querySelector(`.sev-btn[data-sev="${parsed.severity}"]`);
+      if (btn) selectSeverity(btn);
+    }
+    aiStatus.textContent = '✓ ANÁLISIS COMPLETADO';
+    setTimeout(() => aiBox.classList.remove('visible'), 2000);
+    showToast('✓ IA completó el análisis');
+  } catch(e) {
+    aiStatus.textContent = '⚠ Error — completa manualmente';
+    setTimeout(() => aiBox.classList.remove('visible'), 2500);
+  }
+}
+
+function saveFinding() {
+  const title = document.getElementById('nfTitle').value.trim();
+  if (!title) { showToast('⚠ Agrega un título al hallazgo'); return; }
+  if (!selectedSeverity) { showToast('⚠ Selecciona la severidad'); return; }
+
+  const finding = {
+    id: auditData.findings.length + 1,
+    title,
+    area: document.getElementById('nfArea').value,
+    severity: selectedSeverity,
+    description: document.getElementById('nfDescription').value,
+    action: document.getElementById('nfAction').value,
+    standards: [...document.querySelectorAll('#nfStdGrid .std-toggle.on')].map(el => el.textContent),
+    stdRef: document.getElementById('nfStdRef').value,
+    deadline: document.getElementById('nfDeadline').value,
+    responsible: document.getElementById('nfResponsible').value,
+    photo: currentPhotoBase64 ? `data:${currentPhotoType};base64,${currentPhotoBase64}` : null,
+    timestamp: new Date().toISOString(),
+    gps: null
+  };
+
+  // Try to get GPS
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      finding.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+      auditData.findings.push(finding);
+    }, () => { auditData.findings.push(finding); });
+  } else {
+    auditData.findings.push(finding);
+  }
+
+  renderFinding(finding);
+  closeModal('modalNewFinding');
+  updateBarCount();
+  saveToStorage();
+  showToast(`✓ Hallazgo #${finding.id} guardado`);
+}
+
+function renderFinding(f) {
+  const list = document.getElementById('findingsList');
+  document.getElementById('emptyState')?.remove();
+
+  const sevLabels = { critical:'🔴 CRÍTICO', high:'🟠 ALTO', medium:'🟡 MEDIO', low:'🟢 BAJO' };
+  const card = document.createElement('div');
+  card.className = 'finding-card';
+  card.id = `fc${f.id}`;
+
+  const stds = f.standards?.map(s => `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border:1px solid var(--border2);color:var(--muted2)">${s}</span>`).join('') || '';
+  const gpsInfo = f.gps ? `📍 GPS: ${f.gps.lat.toFixed(5)}, ${f.gps.lng.toFixed(5)}` : '';
+  const photoHtml = f.photo ? `<img src="${f.photo}" class="finding-photo" alt="Hallazgo ${f.id}">` : '';
+  const ts = new Date(f.timestamp).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  card.innerHTML = `
+    <div class="finding-card-header" onclick="toggleFinding(${f.id})">
+      <div class="finding-num">#${f.id}</div>
+      <div class="finding-header-info">
+        <div class="finding-title-text">${f.title}</div>
+        <div class="finding-meta">${f.area || '—'} · ${ts}</div>
+      </div>
+      <span class="sev-pill sev-${f.severity}">${sevLabels[f.severity]}</span>
+    </div>
+    <div class="finding-card-body" id="fb${f.id}">
+      ${photoHtml}
+      <div class="finding-body-field">
+        <div class="finding-field-label">OBSERVACIÓN</div>
+        <div class="finding-field-value">${f.description || '—'}</div>
+      </div>
+      <div class="finding-body-field">
+        <div class="finding-field-label">ACCIÓN CORRECTIVA</div>
+        <div class="finding-field-value" style="color:var(--accent)">${f.action || '—'}</div>
+      </div>
+      <div class="std-ref-box">
+        <strong>REFERENCIA NORMATIVA</strong><br>
+        ${f.stdRef || '—'}<br>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${stds}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2)">
+        <span>⏱ ${f.deadline}</span>
+        <span>${f.responsible || ''}</span>
+      </div>
+      ${gpsInfo ? `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2);margin-top:8px">${gpsInfo}</div>` : ''}
+    </div>
+  `;
+  list.appendChild(card);
+}
+
+function toggleFinding(id) {
+  const body = document.getElementById(`fb${id}`);
+  body.classList.toggle('open');
+}
+
+function updateBarCount() {
+  document.getElementById('barCount').textContent = auditData.findings.length;
+}
+
+// ── SUMMARY ──
+function showSummary() {
+  const f = auditData.findings;
+  const counts = { critical:0, high:0, medium:0, low:0 };
+  f.forEach(fi => counts[fi.severity]++);
+  const score = Math.min(100, Math.round((counts.critical*25 + counts.high*15 + counts.medium*8 + counts.low*3)));
+  const level = score >= 60 ? 'CRÍTICO' : score >= 35 ? 'ALTO' : score >= 15 ? 'MEDIO' : 'BAJO';
+  const lvlColor = score >= 60 ? 'var(--accent2)' : score >= 35 ? 'var(--warn)' : score >= 15 ? 'var(--accent)' : 'var(--accent3)';
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:56px;color:${lvlColor};line-height:1">${score}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${lvlColor};letter-spacing:2px">RIESGO ${level}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);padding:12px;text-align:center;border-radius:4px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#ff6b6b">${counts.critical}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted2)">CRÍTICO</div>
+      </div>
+      <div style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);padding:12px;text-align:center;border-radius:4px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--warn)">${counts.high}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted2)">ALTO</div>
+      </div>
+      <div style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);padding:12px;text-align:center;border-radius:4px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent)">${counts.medium}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted2)">MEDIO</div>
+      </div>
+      <div style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);padding:12px;text-align:center;border-radius:4px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent3)">${counts.low}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted2)">BAJO</div>
+      </div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);line-height:1.8">
+      <div>📋 <strong style="color:var(--text)">${auditData.client.name}</strong></div>
+      <div>📍 <strong style="color:var(--text)">${auditData.client.site}</strong> · ${auditData.client.city||''}</div>
+      <div>👤 Auditor: <strong style="color:var(--text)">${auditData.auditor}</strong></div>
+      <div>🏢 Tipo: <strong style="color:var(--text)">${auditData.facilityType||'—'}</strong></div>
+      <div>📊 Estándares: <strong style="color:var(--text)">${auditData.auditTypes.join(', ')}</strong></div>
+      <div>🗓 Inicio: <strong style="color:var(--text)">${new Date(auditData.startTime).toLocaleString('es-MX')}</strong></div>
+    </div>
+    <button class="btn-secondary" style="margin-top:16px" onclick="exportAuditText()">↓ EXPORTAR RESUMEN</button>
+  `;
+  openModal('modalSummary');
+}
+
+function exportAuditText() {
+  const f = auditData.findings;
+  const now = new Date().toLocaleString('es-MX');
+  let txt = `═══════════════════════════════════════════\n VOLTREX SECURE AUDIT — RISK ASSESSMENT\n═══════════════════════════════════════════\n\nCLIENTE: ${auditData.client.name}\nINSTALACIÓN: ${auditData.client.site}\nDIRECCIÓN: ${auditData.client.address||'—'}\nAUDITOR: ${auditData.auditor}\nFECHA: ${now}\nESTÁNDARES: ${auditData.auditTypes.join(', ')}\nTIPO: ${auditData.facilityType||'—'}\nTOTAL HALLAZGOS: ${f.length}\n\n───────────────────────────────────────────\n HALLAZGOS\n───────────────────────────────────────────\n\n`;
+  f.forEach(fi => {
+    txt += `[#${fi.id}] ${fi.title}\nSeveridad: ${fi.severity.toUpperCase()} | Área: ${fi.area||'—'} | Plazo: ${fi.deadline}\nDescripción: ${fi.description||'—'}\nAcción: ${fi.action||'—'}\nReferencia: ${fi.stdRef||'—'}\nResponsable: ${fi.responsible||'—'}\n${fi.gps?`GPS: ${fi.gps.lat.toFixed(5)}, ${fi.gps.lng.toFixed(5)}\n`:''}\n`;
+  });
+  txt += `═══════════════════════════════════════════\nGenerado por VOLTREX SecureAudit · ${now}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('✓ Resumen copiado al portapapeles')).catch(()=>alert(txt));
+}
+
+// ── STORAGE ──
+function saveToStorage() {
+  try {
+    const save = { ...auditData };
+    save.findings = save.findings.map(f => ({ ...f, photo: null })); // skip photos for storage size
+    localStorage.setItem('voltrex_audit_current', JSON.stringify(save));
+  } catch(e) {}
+}
+
+function loadExisting() {
+  try {
+    const saved = localStorage.getItem('voltrex_audit_current');
+    if (!saved) { showToast('No hay auditoría guardada'); return; }
+    const d = JSON.parse(saved);
+    auditData = d;
+    document.getElementById('barClient').textContent = `${d.client.name} — ${d.client.site}`;
+    document.getElementById('barMeta').textContent = `${d.facilityType||'Instalación'} · ${d.client.city||''}`;
+    const colors = {'ASIS-CPP':'#00d4ff','ASIS-APP':'#00d4ff','CTPAT':'#00ff88','EHS':'#ffaa00','OSHA':'#ffaa00','PROTECCION-CIVIL':'#a855f7','NFPA':'#f87171','ISO45001':'#34d399','ISO27001':'#a78bfa','STPS':'#fbbf24'};
+    document.getElementById('barBadges').innerHTML = (d.auditTypes||[]).map(t=>`<span class="type-badge" style="border-color:${colors[t]||'#fff'};color:${colors[t]||'#fff'}">${t}</span>`).join('');
+    const areaSelect = document.getElementById('nfArea');
+    areaSelect.innerHTML = '<option value="">Seleccionar área...</option>';
+    ['Acceso principal','Perímetro','Almacén','Carga/Descarga','Estacionamiento','Producción','Oficinas','CCTV / Control','Quím. Peligrosos','Cuarto de TI','Área exterior','Rutas evacuación'].forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;areaSelect.appendChild(o);});
+    const stdGrid = document.getElementById('nfStdGrid');
+    stdGrid.innerHTML = '';
+    (d.auditTypes||[]).forEach(t=>{const el=document.createElement('div');el.className='std-toggle on';el.textContent=t;el.onclick=()=>el.classList.toggle('on');stdGrid.appendChild(el);});
+    document.getElementById('findingsList').innerHTML = '';
+    d.findings.forEach(f => renderFinding(f));
+    updateBarCount();
+    goTo('screenAudit');
+    showToast(`✓ Auditoría cargada — ${d.findings.length} hallazgos`);
+  } catch(e) { showToast('Error cargando auditoría'); }
+}
+
+function confirmExit() {
+  if (auditData.findings.length > 0) {
+    if (confirm('¿Salir? Los hallazgos están guardados localmente.')) goTo('screenSplash');
+  } else { goTo('screenSplash'); }
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── V3: ONLINE/OFFLINE/VOICE ADDED VIA PATCH ──
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════ V3 ADDITIONS ═══════════════════
+
+// ── ONLINE/OFFLINE ──
+let isOnline = navigator.onLine;
+let pendingSync = [];
+
+function checkOnline() {
+  isOnline = navigator.onLine;
+  const b = document.getElementById('offlineBanner');
+  const t = document.getElementById('offlineText');
+  const f = document.getElementById('mainFab');
+  const badge = document.getElementById('pendingBadge');
+  if (badge) {
+    if (pendingSync.length > 0) { badge.textContent = pendingSync.length; badge.classList.add('show'); }
+    else { badge.classList.remove('show'); }
+  }
+  if (b) {
+    if (isOnline) {
+      b.classList.add('online');
+      t.textContent = pendingSync.length > 0 ? `EN LÍNEA · ${pendingSync.length} PENDIENTE${pendingSync.length>1?'S':''} SIN SINCRONIZAR` : 'EN LÍNEA · SINCRONIZADO ✓';
+      if (f) f.style.background = '';
+    } else {
+      b.classList.remove('online');
+      t.textContent = pendingSync.length > 0 ? `OFFLINE · ${pendingSync.length} HALLAZGO${pendingSync.length>1?'S':''} PENDIENTE${pendingSync.length>1?'S':''}` : 'SIN CONEXIÓN — MODO OFFLINE ACTIVO';
+      if (f) f.style.background = 'linear-gradient(135deg,#664400,#ffaa00)';
+    }
+  }
+}
+window.addEventListener('online', () => { checkOnline(); showToast('✓ Conexión restaurada'); });
+window.addEventListener('offline', () => { checkOnline(); showToast('⚠ Sin conexión — modo offline', true); });
+
+// ── BIRDSEYE ──
+function loadBirdseye(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    auditData.birdseyeImage = e.target.result;
+    const p = document.getElementById('birdseyePreview');
+    p.src = e.target.result; p.style.display = 'block';
+    document.getElementById('birdseyeDrop').style.display = 'none';
+    const m = document.getElementById('birdseyeMeta');
+    m.style.display = 'block'; m.textContent = `📎 ${file.name} — ${(file.size/1024).toFixed(0)} KB`;
+    showToast('✓ Plano cargado');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── GPS + TIMESTAMP ON PHOTO ──
+let v3PhotoMeta = null;
+
+const origHandlePhoto = window.handlePhotoCapture;
+window.handlePhotoCapture = function(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const result = e.target.result;
+    currentPhotoBase64 = result.split(',')[1];
+    currentPhotoType = file.type;
+    v3PhotoMeta = { ts: new Date().toISOString(), gps: null };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        v3PhotoMeta.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+        showPhotoMeta();
+      }, () => showPhotoMeta());
+    } else showPhotoMeta();
+    document.getElementById('newFindingPhotoPreview').src = result;
+    document.getElementById('newFindingPhotoPreview').style.display = 'block';
+    document.getElementById('photoCaptureArea').style.display = 'none';
+    if (isOnline) await analyzePhoto();
+    else showToast('📴 Foto guardada — IA al sincronizar', true);
+  };
+  reader.readAsDataURL(file);
+};
+
+function showPhotoMeta() {
+  const m = v3PhotoMeta; if (!m) return;
+  const ts = new Date(m.ts).toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const gps = m.gps ? `📍 ${m.gps.lat.toFixed(5)}, ${m.gps.lng.toFixed(5)} (±${m.gps.acc}m)` : '📍 GPS no disponible';
+  const box = document.getElementById('photoMetaInfo');
+  if (box) { box.style.display = 'block'; box.innerHTML = `🕐 ${ts}<br>${gps}`; }
+}
+
+// ── QUICK DICTATION ──
+let activeQuickRec = null, activeQuickRecTarget = null;
+// ── v4: DETECT iOS ──
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+function checkSpeechSupport() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return false;
+  // Show iOS note if on Safari iOS
+  if (isIOS && isSafari) {
+    const note = document.getElementById('iosNote');
+    if (note) note.classList.add('show');
+  }
+  return true;
+}
+
+// ── v4: QUICK DICTATE PER FIELD (improved with live transcript + field highlight) ──
+function qDictate(targetId, groupId, btnId) {
+  if (!checkSpeechSupport()) { showToast('⚠ Tu navegador no soporta dictado. Usa Chrome.', true); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const target = document.getElementById(targetId);
+  const group = document.getElementById(groupId);
+  const btn = document.getElementById(btnId);
+  const lt = document.getElementById('lt' + targetId.replace('nf',''));
+
+  // If already recording this field, stop it
+  if (activeQuickRec && activeQuickRecTarget === targetId) {
+    activeQuickRec.stop();
+    activeQuickRec = null; activeQuickRecTarget = null;
+    if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙 DICTAR'; }
+    if (group) group.classList.remove('dictating');
+    if (lt) { lt.classList.remove('active'); lt.textContent = ''; }
+    return;
+  }
+
+  // Stop any other active recording
+  if (activeQuickRec) { try { activeQuickRec.stop(); } catch(e){} activeQuickRec = null; }
+  // Reset all field highlights
+  document.querySelectorAll('.form-group.dictating').forEach(g => g.classList.remove('dictating'));
+  document.querySelectorAll('.mic-btn.recording').forEach(b => { b.classList.remove('recording'); b.innerHTML = '🎙 DICTAR'; });
+  document.querySelectorAll('.live-transcript.active').forEach(l => { l.classList.remove('active'); l.textContent = ''; });
+
+  const orig = target.value;
+  const rec = new SR();
+  rec.lang = 'es-MX';
+  rec.continuous = isIOS ? false : true; // iOS doesn't support continuous well
+  rec.interimResults = true;
+  activeQuickRec = rec;
+  activeQuickRecTarget = targetId;
+
+  if (btn) { btn.classList.add('recording'); btn.innerHTML = '⏹ DETENER'; }
+  if (group) group.classList.add('dictating');
+  if (lt) { lt.classList.add('active'); lt.textContent = '🎙 Escuchando...'; }
+
+  rec.onresult = e => {
+    const interim = [...e.results].map(r => r[0].transcript).join('');
+    target.value = orig + (orig ? ' ' : '') + interim;
+    if (lt) lt.textContent = '🎙 ' + interim.slice(-80);
+    if (e.results[e.results.length - 1].isFinal) {
+      activeQuickRec = null; activeQuickRecTarget = null;
+      if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙 DICTAR'; }
+      if (group) group.classList.remove('dictating');
+      if (lt) { lt.classList.remove('active'); lt.textContent = ''; }
+      showToast('✓ Dictado guardado');
+    }
+  };
+  rec.onerror = (e) => {
+    activeQuickRec = null; activeQuickRecTarget = null;
+    if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙 DICTAR'; }
+    if (group) group.classList.remove('dictating');
+    if (lt) { lt.classList.remove('active'); }
+    if (e.error === 'not-allowed') showToast('⚠ Permiso de micrófono denegado', true);
+    else if (e.error === 'no-speech') showToast('No se detectó voz — intenta de nuevo', true);
+  };
+  rec.onend = () => {
+    if (activeQuickRecTarget === targetId) {
+      activeQuickRec = null; activeQuickRecTarget = null;
+      if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙 DICTAR'; }
+      if (group) group.classList.remove('dictating');
+      if (lt) { lt.classList.remove('active'); lt.textContent = ''; }
+    }
+  };
+  rec.start();
+}
+
+// ── v4: FULL VOICE DICTATION (with timer + better states) ──
+let fullVoiceOn = false, fullVoiceRec = null, fullVoiceTimer = null, fullVoiceSecs = 0;
+
+function toggleFullVoice() {
+  if (!checkSpeechSupport()) { showToast('⚠ Tu navegador no soporta dictado. Usa Chrome.', true); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById('btnVoiceFull');
+  const wave = document.getElementById('voiceWave');
+  const status = document.getElementById('voiceStatus');
+  const timer = document.getElementById('voiceTimer');
+
+  // Stop any field-level recording first
+  if (activeQuickRec) { try { activeQuickRec.stop(); } catch(e){} activeQuickRec = null; activeQuickRecTarget = null; }
+  document.querySelectorAll('.form-group.dictating').forEach(g => g.classList.remove('dictating'));
+  document.querySelectorAll('.mic-btn.recording').forEach(b => { b.classList.remove('recording'); b.innerHTML = '🎙 DICTAR'; });
+
+  if (!fullVoiceOn) {
+    fullVoiceOn = true;
+    fullVoiceSecs = 0;
+    btn.classList.add('recording'); btn.textContent = '⏹ DETENER Y PROCESAR CON IA';
+    wave.classList.add('active');
+    status.className = 'voice-status active';
+    status.textContent = '🎙 Habla libremente... describe todo el hallazgo.';
+    timer.classList.add('active'); timer.textContent = '⏱ 0:00 — GRABANDO';
+
+    // Recording timer
+    fullVoiceTimer = setInterval(() => {
+      fullVoiceSecs++;
+      const m = Math.floor(fullVoiceSecs / 60), s = fullVoiceSecs % 60;
+      if (timer) timer.textContent = `⏱ ${m}:${s.toString().padStart(2,'0')} — GRABANDO`;
+    }, 1000);
+
+    let transcript = '';
+    const rec = new SR();
+    rec.lang = 'es-MX';
+    rec.continuous = true;
+    rec.interimResults = true;
+    fullVoiceRec = rec;
+    rec.onresult = e => {
+      transcript = [...e.results].map(r => r[0].transcript).join(' ');
+      status.textContent = '🎙 ' + transcript.slice(-120);
+    };
+    rec.onend = async () => { if (fullVoiceOn) await processFullVoice(transcript); };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed') { showToast('⚠ Permiso de micrófono denegado', true); stopFullVoice(); }
+      else if (e.error !== 'no-speech') stopFullVoice();
+    };
+    rec.start();
+  } else {
+    stopFullVoice();
+  }
+}
+
+function stopFullVoice() {
+  fullVoiceOn = false;
+  clearInterval(fullVoiceTimer); fullVoiceTimer = null;
+  const btn = document.getElementById('btnVoiceFull');
+  const timer = document.getElementById('voiceTimer');
+  if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙️ DICTAR HALLAZGO COMPLETO CON IA'; }
+  document.getElementById('voiceWave')?.classList.remove('active');
+  if (timer) timer.classList.remove('active');
+  if (fullVoiceRec) { try { fullVoiceRec.stop(); } catch(e){} fullVoiceRec = null; }
+}
+
+async function processFullVoice(transcript) {
+  const status = document.getElementById('voiceStatus');
+  const timer = document.getElementById('voiceTimer');
+  stopFullVoice();
+  if (!transcript || transcript.trim().length < 5) {
+    status.className = 'voice-status error';
+    status.textContent = '⚠ No se detectó voz suficiente. Intenta de nuevo.';
+    return;
+  }
+  if (!isOnline) {
+    document.getElementById('nfDescription').value = transcript;
+    status.className = 'voice-status';
+    status.textContent = '📴 Sin conexión — texto guardado en Observación. Se procesará con IA al sincronizar.';
+    showToast('📴 Texto guardado — IA al sincronizar', true);
+    return;
+  }
+  status.className = 'voice-status active';
+  status.textContent = '⟳ IA analizando tu dictado...';
+  const stds = [...document.querySelectorAll('#nfStdGrid .std-toggle.on')].map(e => e.textContent).join(', ') || 'ASIS, C-TPAT, OSHA';
+  const fac = auditData.facilityType || 'instalación industrial';
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        system:`Eres auditor certificado experto en ${stds} para "${fac}". Tu tarea es extraer datos estructurados de una nota de voz de un auditor en campo. Responde SOLO con JSON válido, sin texto adicional, sin backticks.`,
+        messages:[{role:"user",content:`El auditor dictó esta nota de voz: "${transcript}"
+
+Extrae los datos y responde con este JSON exacto:
+{"title":"título corto del hallazgo (máx 60 chars)","severity":"critical|high|medium|low","area":"área donde se detectó","description":"descripción completa del hallazgo","action":"acción correctiva específica recomendada","stdRef":"referencia normativa aplicable de ${stds}","deadline":"Inmediato|7 días|30 días|90 días","responsible":"responsable sugerido"}`}]
+      })
+    });
+    const d = await res.json();
+    const raw = d.content?.map(b => b.text||'').join('') || '';
+    const p = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if (p.title) document.getElementById('nfTitle').value = p.title;
+    if (p.description) document.getElementById('nfDescription').value = p.description;
+    if (p.action) document.getElementById('nfAction').value = p.action;
+    if (p.stdRef) document.getElementById('nfStdRef').value = p.stdRef;
+    if (p.deadline) document.getElementById('nfDeadline').value = p.deadline;
+    if (p.responsible) document.getElementById('nfResponsible').value = p.responsible;
+    if (p.area) {
+      const sel = document.getElementById('nfArea');
+      for (let o of sel.options) {
+        if (o.value && o.value.toLowerCase().includes(p.area.toLowerCase().slice(0,5))) { sel.value = o.value; break; }
+      }
+    }
+    if (p.severity) { const b = document.querySelector(`.sev-btn[data-sev="${p.severity}"]`); if (b) selectSeverity(b); }
+    status.className = 'voice-status success';
+    status.textContent = '✓ Campos completados desde tu dictado. Revisa y ajusta si es necesario.';
+    showToast('✓ IA procesó el dictado correctamente');
+  } catch(e) {
+    status.className = 'voice-status error';
+    status.textContent = '⚠ Error al procesar — texto guardado en Observación.';
+    document.getElementById('nfDescription').value = transcript;
+  }
+}
+// ── PATCH saveFinding TO INCLUDE OFFLINE SUPPORT ──
+const origSaveFinding = window.saveFinding;
+window.saveFinding = function() {
+  // After original save, handle offline queue
+  const beforeCount = auditData.findings.length;
+  origSaveFinding();
+  const f = auditData.findings[auditData.findings.length - 1];
+  if (f && !isOnline && currentPhotoBase64) {
+    pendingSync.push({ ...f, photoB64: currentPhotoBase64, pType: currentPhotoType });
+  }
+  if (f) {
+    f.gps = v3PhotoMeta?.gps || null;
+    f.timestamp = v3PhotoMeta?.ts || f.timestamp;
+  }
+  checkOnline();
+};
+
+// ── SYNC PENDING ──
+function openSyncInfo() {
+  document.getElementById('syncStatusDisplay').innerHTML = `Estado: ${isOnline ? '<span style="color:var(--accent3)">EN LÍNEA</span>' : '<span style="color:var(--warn)">OFFLINE</span>'}<br>Pendientes análisis IA: <strong style="color:var(--warn)">${pendingSync.length}</strong><br>Total hallazgos: <strong>${auditData.findings.length}</strong>`;
+  const list = document.getElementById('syncItemsList'); list.innerHTML = '';
+  if (!pendingSync.length) { list.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent3);padding:14px;text-align:center">✓ SIN PENDIENTES</div>`; return; }
+  pendingSync.forEach(f => { const el = document.createElement('div'); el.className = 'sync-item'; el.innerHTML = `<div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--muted2);min-width:28px">#${f.id}</div><div style="flex:1"><div style="font-size:13px;font-weight:700">${f.title||'Sin título'}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted2)">${f.area||'—'}</div></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;background:rgba(255,170,0,.12);color:var(--warn);padding:3px 8px;border-radius:2px">PENDIENTE</span>`; list.appendChild(el); });
+}
+
+async function syncPending() {
+  if (!isOnline) { showToast('⚠ Sin conexión para sincronizar', true); return; }
+  if (!pendingSync.length) { showToast('✓ Sin hallazgos pendientes'); return; }
+  const btn = document.getElementById('syncModalBtn'); if(btn){btn.disabled=true;btn.textContent='⟳ SINCRONIZANDO...';}
+  let done = 0;
+  for (const f of [...pendingSync]) {
+    if (f.photoB64 && f.pType) {
+      try {
+        const stds = auditData.auditTypes.join(', ');
+        const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:`Auditor experto en ${stds}. Responde SOLO JSON.`, messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:f.pType,data:f.photoB64}},{type:"text",text:`Analiza hallazgo en "${f.area||'área'}". JSON: {"title":"...","severity":"critical|high|medium|low","description":"...","action":"...","stdRef":"..."}`}]}] }) });
+        const d = await res.json(), p = JSON.parse(d.content?.map(b=>b.text||'').join('').replace(/\`\`\`json|\`\`\`/g,'').trim());
+        const idx = auditData.findings.findIndex(x => x.id === f.id);
+        if (idx >= 0) {
+          if (!auditData.findings[idx].description && p.description) auditData.findings[idx].description = p.description;
+          if (!auditData.findings[idx].action && p.action) auditData.findings[idx].action = p.action;
+          if (!auditData.findings[idx].stdRef && p.stdRef) auditData.findings[idx].stdRef = p.stdRef;
+          const card = document.getElementById(`fc${f.id}`);
+          if (card) { card.remove(); renderFinding(auditData.findings[idx]); }
+        }
+        pendingSync.splice(pendingSync.indexOf(f), 1); done++;
+      } catch(e) {}
+    } else { pendingSync.splice(pendingSync.indexOf(f), 1); done++; }
+  }
+  saveToStorage(); checkOnline();
+  if (btn) { btn.disabled = false; btn.textContent = '⟳ SINCRONIZAR CON IA'; }
+  openSyncInfo(); showToast(`✓ ${done} hallazgo(s) sincronizados`);
+}
+
+// ── PATCH openModal FOR SYNC ──
+const origOpenModal = window.openModal;
+window.openModal = function(id) {
+  origOpenModal(id);
+  if (id === 'modalSync') openSyncInfo();
+};
+
+// ── PATCH openNewFinding TO RESET V4 FIELDS ──
+const origOpenNewFinding = window.openNewFinding;
+window.openNewFinding = function() {
+  origOpenNewFinding();
+  v3PhotoMeta = null;
+  // Reset photo meta display
+  const pm = document.getElementById('photoMetaInfo'); if (pm) { pm.style.display='none'; pm.innerHTML=''; }
+  // Reset voice status
+  const vs = document.getElementById('voiceStatus'); if (vs) { vs.className='voice-status'; vs.textContent='Presiona para dictar libremente — la IA llenará todos los campos.'; }
+  // Reset wave & timer
+  document.getElementById('voiceWave')?.classList.remove('active');
+  const vt = document.getElementById('voiceTimer'); if (vt) vt.classList.remove('active');
+  // Reset voice button
+  const btn = document.getElementById('btnVoiceFull'); if (btn) { btn.classList.remove('recording'); btn.innerHTML='🎙️ DICTAR HALLAZGO COMPLETO CON IA'; }
+  // Reset all field dictating states
+  document.querySelectorAll('.form-group.dictating').forEach(g => g.classList.remove('dictating'));
+  document.querySelectorAll('.mic-btn.recording').forEach(b => { b.classList.remove('recording'); b.innerHTML='🎙 DICTAR'; });
+  document.querySelectorAll('.live-transcript').forEach(l => { l.classList.remove('active'); l.textContent=''; });
+  // Stop any active recording
+  stopFullVoice();
+  if (activeQuickRec) { try { activeQuickRec.stop(); } catch(e){} activeQuickRec = null; activeQuickRecTarget = null; }
+  // Check speech support (shows iOS note if needed)
+  checkSpeechSupport();
+};
+
+// ── ADD SYNC BUTTON TO HEADER ──
+document.addEventListener('DOMContentLoaded', () => {
+  checkOnline();
+});
+
+// Also init immediately
+checkOnline();
+
+</script>
+</body>
+</html>
